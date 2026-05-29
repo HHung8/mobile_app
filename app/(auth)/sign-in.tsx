@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StatusBar, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -104,7 +104,10 @@ const SignIn = () => {
           </View>
         </View>
 
-        <TouchableOpacity className="self-end mb-7 mt-1.5">
+        <TouchableOpacity 
+          className="self-end mb-7 mt-1.5"
+          onPress={() => router.push("/(auth)/forgot-password")}
+          >
           <Text className="text-sm text-[#7A7167] tracking-wider">
             Quên mật khẩu?
           </Text>

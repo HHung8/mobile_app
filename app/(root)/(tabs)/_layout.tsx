@@ -15,7 +15,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="search"
-        options={{
+        options={{  
           title: "Search",
           tabBarIcon: ({ color, size }) => (
             <Feather name="search" size={size} color={color} />

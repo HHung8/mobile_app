@@ -1,181 +1,118 @@
+import { useAuth } from "@/context/AuthContext";
+import { useFilterStore } from "@/store/filterStore";
+import { Property } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const mockProperties = [
-  {
-    id: "1",
-    title: "Modern Apartment",
-    city: "Tokyo",
-    price: "$1,200/month",
-    image:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1200",
-  },
-  {
-    id: "2",
-    title: "Luxury Villa",
-    city: "Osaka",
-    price: "$3,500/month",
-    image:
-      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200",
-  },
-  {
-    id: "3",
-    title: "Cozy Studio",
-    city: "Kyoto",
-    price: "$850/month",
-    image:
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=1200",
-  },
-  {
-    id: "4",
-    title: "Family House",
-    city: "Nagoya",
-    price: "$1,800/month",
-    image:
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=1200",
-  },
-];
+const API_BASE = process.env.EXPO_PUBLIC_API_URL;
 
 const Search = () => {
-  const [search, setSearch] = useState("");
-  const [loading] = useState(false);
+  const {accessToken} = useAuth();
+  const {search, setSearch, type, bedrooms, minPrice, maxPrice} = useFilterStore();
+  const [results, setResults] = useState<Property[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const results = useMemo(() => {
-    if (!search.trim()) return mockProperties;
+  const fetchResults = async () => {
+    if(!accessToken) return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if(search.trim()) params.append("Search", search.trim());
+      if(type)          params.append("Type", type);
+      if (bedrooms)        params.append("Bedrooms", String(bedrooms));
+      if (minPrice)        params.append("MinPrice", String(minPrice));
+      if (maxPrice)        params.append("MaxPrice", String(maxPrice));
+      params.append("Page", "1");
+      params.append("PageSize", "20");
 
-    return mockProperties.filter(
-      (item) =>
-        item.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.city.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [search]);
+       const res = await fetch(`${API_BASE}/Property?${params.toString()}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+       if (res.ok) {
+        const data = await res.json();
+        setResults(data.items ?? []);
+        setTotal(data.total ?? 0);
+      }
+
+    } catch (e) {
+      console.error("Search failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if(debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(fetchResults, 500);
+    return () => {
+      if(debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [search, type, bedrooms, minPrice, maxPrice, accessToken])
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
+ <SafeAreaView className="flex-1 bg-gray-50">
       <View className="px-5 pt-4 pb-4">
-        <Text className="text-2xl font-bold text-gray-900 mb-4">
-          Find Property
-        </Text>
-
-        {/* Search Bar */}
+        <Text className="text-2xl font-bold text-gray-900 mb-4">Find Property</Text>
         <View
           className="flex-row items-center bg-white rounded-2xl px-4"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.06,
-            shadowRadius: 6,
-            elevation: 2,
-          }}
+          style={{ shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 }}
         >
-          <Ionicons
-            name="search-outline"
-            size={18}
-            color="#9CA3AF"
-          />
-
+          <Ionicons name="search-outline" size={18} color="#9CA3AF" />
           <TextInput
             className="flex-1 py-4 ml-3 text-gray-800"
             placeholder="Search by title or city..."
             placeholderTextColor="#9CA3AF"
             value={search}
-            onChangeText={setSearch}
+            onChangeText={setSearch}  // ghi thẳng vào store
           />
-
           {search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch("")}>
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color="#9CA3AF"
-              />
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Result List */}
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingBottom: 100,
-        }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <Text className="text-sm text-gray-400 mb-4">
-            {loading
-              ? "Searching..."
-              : `${results.length} properties found`}
+            {loading ? "Searching..." : `${total} properties found`}
           </Text>
         }
         renderItem={({ item }) => (
           <TouchableOpacity className="bg-white rounded-3xl overflow-hidden mb-5">
-            <Image
-              source={{ uri: item.image }}
-              className="w-full h-52"
-            />
-
+            <Image source={{ uri: item.images?.[0] }} className="w-full h-52" />
             <View className="p-4">
-              <Text className="text-lg font-bold text-gray-900">
-                {item.title}
-              </Text>
-
-              <Text className="text-gray-500 mt-1">
-                {item.city}
-              </Text>
-
+              <Text className="text-lg font-bold text-gray-900">{item.title}</Text>
+              <Text className="text-gray-500 mt-1">{item.city}</Text>
               <View className="flex-row items-center justify-between mt-3">
-                <Text className="text-blue-600 font-bold">
-                  {item.price}
-                </Text>
-
-                <TouchableOpacity>
-                  <Ionicons
-                    name="heart-outline"
-                    size={22}
-                    color="#6B7280"
-                  />
-                </TouchableOpacity>
+                <Text className="text-blue-600 font-bold">${item.price}/month</Text>
+                <Ionicons name="heart-outline" size={22} color="#6B7280" />
               </View>
             </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          !loading ? (
-            <View className="items-center py-20">
-              <Ionicons
-                name="search-outline"
-                size={48}
-                color="#D1D5DB"
-              />
-
-              <Text className="text-gray-400 mt-4 text-base">
-                No properties found
-              </Text>
-
-              <Text className="text-gray-300 text-sm mt-1">
-                Try another keyword
-              </Text>
-            </View>
+          loading ? (
+            <ActivityIndicator size="large" color="#2563EB" className="py-20" />
           ) : (
-            <ActivityIndicator
-              size="large"
-              color="#2563EB"
-              className="py-20"
-            />
+            <View className="items-center py-20">
+              <Ionicons name="search-outline" size={48} color="#D1D5DB" />
+              <Text className="text-gray-400 mt-4 text-base">No properties found</Text>
+              <Text className="text-gray-300 text-sm mt-1">Try another keyword</Text>
+            </View>
           )
         }
       />

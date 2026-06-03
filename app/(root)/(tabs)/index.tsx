@@ -1,62 +1,50 @@
+import FeaturedCard from "@/components/FeaturedCard";
+import PropertyCard from "@/components/PropertyCard";
 import { useAuth } from "@/context/AuthContext";
+import { Property } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import React from 'react';
-import { FlatList, Image, Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
-const mockFeatured = [
-    {
-        id: "1",
-        title: "Modern Apartment",
-        city: "Tokyo",
-        price: "$1,200/month",
-        image:
-            "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1200",
-    },
-    {
-        id: "2",
-        title: "Luxury Villa",
-        city: "Osaka",
-        price: "$3,500/month",
-        image:
-            "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=1200",
-    },
-];
-
-const mockRecommended = [
-    {
-        id: "3",
-        title: "Cozy Studio",
-        city: "Kyoto",
-        price: "$850/month",
-        image:
-            "https://images.unsplash.com/photo-1484154218962-a197022b5858?q=80&w=1200",
-    },
-    {
-        id: "4",
-        title: "Family House",
-        city: "Yokohama",
-        price: "$1,800/month",
-        image:
-            "https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=1200",
-    },
-    {
-        id: "5",
-        title: "City Apartment",
-        city: "Nagoya",
-        price: "$1,100/month",
-        image:
-            "https://images.unsplash.com/photo-1494526585095-c41746248156?q=80&w=1200",
-    },
-];
+const API_BASE = process.env.EXPO_PUBLIC_API_URL;
 
 export default function HomeScreen() {
-    const { signOut } = useAuth();
+    const { signOut, accessToken } = useAuth();
+    const router = useRouter();
+    const [featured, setFeatured] = useState<Property[]>([]);
+    const [recommended, setRecommended] = useState<Property[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchData = async () => {
+        if(!accessToken) return;
+        try{
+            const headers = {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`,
+            };
+            const [featuredRes, recommendedRes] = await Promise.all([
+                fetch(`${API_BASE}/Property/featured`, { headers }),
+                fetch(`${API_BASE}/Property/recommended`, { headers }),
+            ])
+            if(featuredRes.ok) setFeatured(await featuredRes.json());
+            if(recommendedRes.ok) setRecommended(await recommendedRes.json());            
+        }catch(e){
+            console.error('Failed to fetch properties', e); 
+        }finally{
+            setLoading(false);
+        }
+    }
+    useEffect(() => {
+        fetchData();
+    }, [accessToken]);
+
     return (
         <SafeAreaView className="flex-1 bg-gray-50">
             <FlatList
-                data={mockRecommended}
+                data={recommended}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
@@ -64,12 +52,8 @@ export default function HomeScreen() {
                     <>
                         <View className="flex-row items-center justify-between px-5 pt-4 pb-5">
                             <View>
-                                <Text className="text-gray-500 text-xs">
-                                    Welcome back 👋
-                                </Text>
-                                <Text className="text-gray-900 text-xl font-bold">
-                                    Hưng Nguyễn
-                                </Text>
+                                <Text className="text-gray-500 text-xs">Welcome back 👋</Text>
+                                <Text className="text-gray-900 text-xl font-bold">Hưng Nguyễn</Text>
                             </View>
                             <TouchableOpacity onPress={signOut}>
                                 <Ionicons
@@ -81,7 +65,8 @@ export default function HomeScreen() {
                         </View>
                         {/* Search */}
                         <TouchableOpacity
-                            className="mx-5 mb-6 flex-row items-center bg-white rounded-2xl px-4 py-3"
+                            onPress={() => router.push("/(root)/(tabs)/search")}
+                            className="mx-5 mb-6 flex-row items-center bg-white rounded-2xl px-4 py-3 gap-3"
                             style={{
                                 shadowColor: "#000",
                                 shadowOffset: { width: 0, height: 1 },
@@ -90,96 +75,55 @@ export default function HomeScreen() {
                                 elevation: 2,
                             }}
                         >
-                            <Ionicons
-                                name="search-outline"
-                                size={18}
-                                color="#9CA3AF"
-                            />
+                            <Ionicons name="search-outline" size={18} color="#9CA3AF"/>
                             <Text className="ml-3 flex-1 text-gray-400">Search properties...</Text>
                             <View className="bg-blue-600 w-8 h-8 rounded-xl items-center justify-center">
-                                <Ionicons
-                                    name="options-outline"
-                                    size={18}
-                                    color="#fff"
-                                />
+                            <TouchableOpacity
+                                onPress = {() => router.push("/(root)/(tabs)/search?openFilters=true")}
+                            >
+                                <Ionicons name="options-outline" size={15} color="white" />
+                            </TouchableOpacity>
                             </View>
                         </TouchableOpacity>
-                        <Text className="px-5 mb-4 text-lg font-bold text-gray-900">
-                            Featured
-                        </Text>
-                        <FlatList
-                            horizontal
-                            data={mockFeatured}
-                            keyExtractor={(item) => item.id}
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={{
-                                paddingHorizontal: 20,
-                                paddingBottom: 20,
-                            }}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity className="mr-4 w-72 bg-white rounded-3xl overflow-hidden">
-                                    <Image
-                                        source={{ uri: item.image }}
-                                        className="w-full h-44"
-                                    />
 
-                                    <View className="p-4">
-                                        <Text className="font-bold text-lg text-gray-900">
-                                            {item.title}
-                                        </Text>
-
-                                        <Text className="text-gray-500 mt-1">
-                                            {item.city}
-                                        </Text>
-
-                                        <Text className="text-blue-600 font-bold mt-3">
-                                            {item.price}
-                                        </Text>
-                                    </View>
-
-                                </TouchableOpacity>
+                        {/* Featured Section */}
+                        <View className="mb-6">
+                            <Text className="text-gray-900 text-lg font-bold px-5 mb-4">
+                                Featured
+                            </Text>
+                            {loading ? (
+                                <ActivityIndicator size="large" color="#2563EB" className="mb-4" />
+                            ) : (
+                                <FlatList 
+                                    data={featured}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={({ item }) => <FeaturedCard property={item} />}
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={{ paddingHorizontal: 20 }} 
+                                />
                             )}
-                        />
+                        </View>
 
-                        <Text className="px-5 mb-4 text-lg font-bold text-gray-900">
+                        {/* Recommended Header */}
+                        <Text className="text-gray-900 text-lg font-bold px-5 mb-4">
                             Recommended
                         </Text>
                     </>
                 }
-                renderItem={({ item }) => (
-                    <TouchableOpacity className="mx-5 mb-4 bg-white rounded-3xl overflow-hidden">
-                        <Image
-                            source={{ uri: item.image }}
-                            className="w-full h-52"
-                        />
-
-                        <View className="p-4">
-                            <Text className="text-lg font-bold text-gray-900">
-                                {item.title}
-                            </Text>
-
-                            <Text className="text-gray-500 mt-1">
-                                {item.city}
-                            </Text>
-
-                            <View className="flex-row items-center justify-between mt-3">
-                                <Text className="text-blue-600 font-bold">
-                                    {item.price}
-                                </Text>
-
-                                <Ionicons
-                                    name="heart-outline"
-                                    size={22}
-                                    color="#6B7280"
-                                />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
+                renderItem={({item}) => (
+                    <View className="px-5">
+                       <PropertyCard property={item} />
+                    </View>
                 )}
+                ListEmptyComponent={
+                    !loading ? (
+                        <View className="items-center py-10">
+                            <Text className="text-gray-500">No properties found</Text>
+                        </View>
+                    ) : null
+                }
             />
-
-
-
         </SafeAreaView>
     )
 }

@@ -1,18 +1,47 @@
-import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import React, { useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 const PropertyDetail = () => {
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+
+  const images = [
+    {
+      uri: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb',
+    },
+  ];
+
   return (
-    <View className="flex-1 bg-gray-50 p-5 align-center">
-      <Text className="text-lg font-bold align-center text-gray-900 align-middle">
-            毎日日本語を勉強したり。IT を勉強したりします
-            でも日本語が難しいですね。頑張ってくださいね
-            いつか日本に行きたいです。日本の文化が大好きです。
-      </Text>
+    <View className="flex-1 bg-white">
+      <ScrollView>
+        <FlatList
+          data={images}
+          horizontal
+          pagingEnabled
+          keyExtractor={(_, i) => i.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => setImageViewerVisible(true)}
+            >
+              <Image
+                source={{ uri: item.uri }}
+                style={{ width, height: 300 }}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          )}
+        />
+      </ScrollView>
     </View>
-  )
-}
+  );
+};
 
-export default PropertyDetail
-
-const styles = StyleSheet.create({})
+export default PropertyDetail;

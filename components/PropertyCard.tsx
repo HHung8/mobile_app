@@ -30,7 +30,7 @@ export default function PropertyCard({
         shadowOpacity: 0.06,
         shadowRadius: 8,
         elevation: 3,
-        opacity: property.is_sold ? 0.5 : 1,
+        opacity: property.isSold ? 0.5 : 1,
       }}
     >
       {/* Image */}
@@ -61,7 +61,7 @@ export default function PropertyCard({
           <Text className="text-blue-600 font-bold text-sm">
             {formatPrice(property.price)}
           </Text>
-          {property.is_sold && (
+          {property.isSold && (
             <View className="bg-red-50 px-2 py-0.5 rounded-full">
               <Text className="text-red-500 text-xs font-semibold">Sold</Text>
             </View>

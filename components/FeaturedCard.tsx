@@ -17,7 +17,7 @@ export default function FeaturedCard({ property }: {property: Property}) {
                 shadowOpacity: 0.08,
                 shadowRadius: 12,
                 elevation: 4,
-                opacity: property.is_sold ? 0.5 : 1,
+                opacity: property.isSold ? 0.5 : 1,
             }}
         >
             <Image
@@ -30,7 +30,7 @@ export default function FeaturedCard({ property }: {property: Property}) {
                 {property.type}
                 </Text>
             </View>
-            {property.is_sold && (
+            {property.isSold && (
                 <View className="absolute top-3 right-3 bg-red-500 px-3 py-1 rounded-full">
                     <Text className="text-xs font-semibold text-white">Sold</Text>
                 </View>

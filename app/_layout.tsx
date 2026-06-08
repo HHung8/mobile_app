@@ -10,22 +10,16 @@ function RootGuard() {
 
   useEffect(() => {
     if (isLoading) return;
-
     const isAuthGroup = segments[0] === '(auth)';
     const isRootGroup = segments[0] === '(root)';
-
-    console.log('segments:', segments, '| accessToken:', !!accessToken);
-
     if (!accessToken && !isAuthGroup) {
       router.replace('/(auth)/sign-in');
     } else if (accessToken && isAuthGroup) {
       router.replace('/(root)/(tabs)');
     }
   }, [accessToken, isLoading, segments]);
-
-  if (isLoading) return null;
-
-  return <Slot />;
+    if (isLoading) return null;
+    return <Slot />;
 }
 
 export default function RootLayout() {

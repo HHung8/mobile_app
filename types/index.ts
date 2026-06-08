@@ -16,3 +16,11 @@ export interface Property {
     isSold: boolean;
     created_at: string; 
 }
+
+export interface SavedItem {
+  id: string;
+  userId: string;
+  propertyId: string;
+  createdAt: string;
+  property: Property;
+}

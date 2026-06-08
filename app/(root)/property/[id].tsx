@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, Linking, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import ImageViewing from "react-native-image-viewing";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from "react-native-webview";
 
@@ -96,9 +95,7 @@ const PropertyDetail = () => {
               data={property?.images}
               keyExtractor={(_, i) => i.toString()}
               renderItem={({ item }) => (
-                <TouchableOpacity onPress={
-                  () => setImageViewerVisible(true)} 
-                >
+                <TouchableOpacity onPress={() => setImageViewerVisible(true)}>
                   <Image
                     source={{ uri: item }}
                     style={{ width, height: 300 }}
@@ -299,12 +296,12 @@ const PropertyDetail = () => {
           )}
       </ScrollView>
       {/* Image Viewer */}
-      <ImageViewing
+      {/* <ImageViewing
         images={property.images.map((uri) => ({ uri }))}
         imageIndex={activeIndex}
         visible={imageViewerVisible}
         onRequestClose={() => setImageViewerVisible(false)}
-      />
+      /> */}
     </View>
   );
 };

@@ -2,8 +2,8 @@ import PropertyCard from '@/components/PropertyCard';
 import { useAuth } from '@/context/AuthContext';
 import { SavedProperty } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -40,9 +40,12 @@ const Saved = () => {
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    fetchSaved()
-  }, [fetchSaved])
+  useFocusEffect(
+    useCallback(() => {
+        setLoading(true);
+        fetchSaved();
+    }, [fetchSaved])
+  );
 
   return (
     <SafeAreaView className='flex-1 bg-gray-50'>
@@ -65,6 +68,11 @@ const Saved = () => {
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{padding: 20, paddingBottom: 100}}
                 showsVerticalScrollIndicator={false}
+                refreshing={refreshing}
+                onRefresh={() => {
+                  setRefreshing(true);
+                  fetchSaved();
+                }}
                 renderItem={({item}) => (
                  <PropertyCard 
                     property={item.property as any}

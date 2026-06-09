@@ -8,34 +8,36 @@ export function useSavedProperty(propertyId: string, onUnSve?: () => void) {
     const [isSaved, setIsSaved] = useState(false);
     const [saveLoading, setSaveLoading] = useState(false);
 
-    const headers = {
-        'accept': '*/*',
-        'Authorization': `Bearer ${accessToken}`
-    };
-
     const checkIfSaved = async () => {
-        if(!accessToken) return;
+        if(!accessToken || !propertyId) return;
         try {
-            const res = await fetch(`${API_URL}/Saved/check/${propertyId}`, {headers});
-            if(!res.ok) return;
+            const res = await fetch(`${API_URL}/Saved/${propertyId}`, {
+                headers: {
+                    accept:"*/*",
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
             const data = await res.json();
-            setIsSaved(data.isSaved);
+            console.log("checkIfSaved:", data); 
+            setIsSaved(data.isSaved === true);
         } catch (error) {
-            console.error('checkIfSaved error', error);
+            console.error("checkIfSaved error", error);
         }
     };
     
     // Call API CheckIfSaved
     useEffect(() => {
         checkIfSaved();
-    }, [propertyId, accessToken])
-
+    }, [propertyId, accessToken]);
 
 
     const save = async () => {
         const res = await fetch(`${API_URL}/Saved/${propertyId}`, {
             method: 'POST',
-            headers,
+            headers: {
+                accept: "*/*",
+                Authorization: `Bearer ${accessToken}`,
+            },
         });
         if(res.ok) setIsSaved(true);
     };
@@ -43,7 +45,10 @@ export function useSavedProperty(propertyId: string, onUnSve?: () => void) {
     const unsave = async () => {
         const res = await fetch(`${API_URL}/Saved/${propertyId}`, {
             method:"DELETE",
-            headers
+            headers: {
+                accept: "*/*",
+                Authorization: `Bearer ${accessToken}`,
+            },
         });
         if(res.ok) {
             setIsSaved(false);

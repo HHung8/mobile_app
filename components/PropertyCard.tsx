@@ -1,4 +1,5 @@
 // import { useSavedProperty } from "@/hooks/useSavedProperty";
+import { useSavedProperty } from "@/hooks/useSavedProperty";
 import { formatPrice } from "@/lib/utils";
 import { Property } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,10 +16,10 @@ export default function PropertyCard({
   showSave?: boolean;
 }) {
   const router = useRouter();
-//   const { isSaved, saveLoading, toggleSave } = useSavedProperty(
-//     property.id,
-//     onUnsave
-//   );
+  const { isSaved, saveLoading, toggleSave } = useSavedProperty(
+    property.id,
+    onUnsave
+  );
 
   return (
     <TouchableOpacity
@@ -76,7 +77,7 @@ export default function PropertyCard({
             <View className="flex-row items-center gap-1">
               <Ionicons name="expand-outline" size={11} color="#6B7280" />
               <Text className="text-xs text-gray-500">
-                {property.area_sqft} ft²
+                {(property as any).areaSqft ?? property.area_sqft} ft²
               </Text>
             </View>
           </View>
@@ -86,14 +87,14 @@ export default function PropertyCard({
       {/* Save Button */}
       {showSave && (
         <TouchableOpacity
-        //   onPress={toggleSave}
-        //   disabled={saveLoading}
+          onPress={toggleSave}
+          disabled={saveLoading}
           className="w-10 items-center pt-3"
         >
           <Ionicons
-            name={ true ? "heart" : "heart-outline"}
+            name={ isSaved ? "heart" : "heart-outline"}
             size={18}
-            color={true ? "#EF4444" : "#9CA3AF"}
+            color={isSaved ? "#EF4444" : "#9CA3AF"}
           />
         </TouchableOpacity>
       )}

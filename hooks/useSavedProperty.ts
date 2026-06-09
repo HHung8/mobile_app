@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -14,6 +14,7 @@ export function useSavedProperty(propertyId: string, onUnSve?: () => void) {
     };
 
     const checkIfSaved = async () => {
+        if(!accessToken) return;
         try {
             const res = await fetch(`${API_URL}/Saved/check/${propertyId}`, {headers});
             if(!res.ok) return;
@@ -23,6 +24,13 @@ export function useSavedProperty(propertyId: string, onUnSve?: () => void) {
             console.error('checkIfSaved error', error);
         }
     };
+    
+    // Call API CheckIfSaved
+    useEffect(() => {
+        checkIfSaved();
+    }, [propertyId, accessToken])
+
+
 
     const save = async () => {
         const res = await fetch(`${API_URL}/Saved/${propertyId}`, {

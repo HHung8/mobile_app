@@ -8,9 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Dimensions, FlatList, Image, Linking, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import ImageViewing from "react-native-image-viewing";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from "react-native-webview";
-
 
 const { width } = Dimensions.get('window');
 const API_ENDPOINT = process.env.EXPO_PUBLIC_API_URL;
@@ -296,12 +296,12 @@ const PropertyDetail = () => {
           )}
       </ScrollView>
       {/* Image Viewer */}
-      {/* <ImageViewing
+      <ImageViewing
         images={property.images.map((uri) => ({ uri }))}
         imageIndex={activeIndex}
         visible={imageViewerVisible}
         onRequestClose={() => setImageViewerVisible(false)}
-      /> */}
+      />
     </View>
   );
 };

@@ -42,3 +42,10 @@ export interface SavedProperty {
     createdAt: string;
   };
 }
+
+export interface JwtPayload {
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'?: string; // thêm id
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'?: string;
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'?: string;
+  isAdmin?: boolean | string;
+}

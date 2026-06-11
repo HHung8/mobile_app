@@ -52,8 +52,7 @@ export default function HomeScreen() {
                     <>
                         <View className="flex-row items-center justify-between px-5 pt-4 pb-5">
                             <View>
-                                <Text className="text-gray-500 text-xs">Welcome back 👋</Text>
-                                <Text className="text-gray-900 text-xl font-bold">Hưng Nguyễn</Text>
+                                <Text className="text-gray-900 text-xs">Welcome back 👋</Text>
                             </View>
                             <TouchableOpacity onPress={signOut}>
                                 <Ionicons

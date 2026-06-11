@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
     interface JwtPayload {
         isAdmin?: boolean | string;
     }
-
+    
     interface AuthContextType { 
         accessToken: string | null;
         refreshToken: string | null;

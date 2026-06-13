@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { JwtPayload } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,6 +14,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const Profile = () => {
   const { signOut, accessToken } = useAuth();
+  const { colors, isDark } = useTheme();
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -30,7 +32,8 @@ const Profile = () => {
       return { id: '', username: '', email: '', isAdmin: false };
     }
   }, [accessToken]);
-  const handleSignOut = () => { signOut() }
+
+  
 
   const handleChangeAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -38,44 +41,34 @@ const Profile = () => {
       Alert.alert('Thông báo', 'Cần cấp quyền truy cập thư viện ảnh');
       return;
     }
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,   // crop hình vuông
+      allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
-    })
-
+    });
     if (result.canceled) return;
     const asset = result.assets[0];
+    setAvatarUri(asset.uri);
     try {
       setUploading(true);
       const formData = new FormData();
-      formData.append('file', {
-        uri: asset.uri,
-        name: `avatar_${user.id}.jpg`,
-        type: 'image/jpeg'
-      } as any);
-
+      formData.append('file', { uri: asset.uri, name: `avatar_${user.id}.jpg`, type: 'image/jpeg' } as any);
       const response = await fetch(`${API_URL}/User/avatar`, {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: formData
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
       });
       const data = await response.json();
-      console.log(`check data upaload file`, data)
       if (!response.ok) {
         Alert.alert("Error", data.message ?? "Upload thất bại");
+        setAvatarUri(null);
         return;
       }
       setAvatarUri(data.avatarUrl);
       Alert.alert("Thành công", "Đã cập nhật ảnh đại diện");
-      console.log('avatarUri:', avatarUri);
-      console.log('Image source:', avatarUri ?? DEFAULT_AVATAR);
-    } catch (error) {
-      setUploading(false);
+    } catch {
+      setAvatarUri(null);
       Alert.alert("Error", "Not connected to server");
     } finally {
       setUploading(false);
@@ -86,99 +79,84 @@ const Profile = () => {
     const loadAvatar = async () => {
       if (!accessToken) return;
       try {
-        const response = await fetch(`${API_URL}/User/me`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
+        const res = await fetch(`${API_URL}/User/me`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-        console.log(`check response load Avatar`, response);
-        const data = await response.json();
-        console.log(`check response conevert json`, data);
-        if(data.avatarUrl) {
-          setAvatarUri(data.avatarUrl);
-        }
-      } catch (error) {
-        console.log(`No loaded data avatar`, error);
+        const data = await res.json();
+        if (data.avatarUrl) setAvatarUri(data.avatarUrl);
+      } catch (e) {
+        console.log('No loaded avatar', e);
       }
     };
     loadAvatar();
-  }, [accessToken])
+  }, [accessToken]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Avartar + info */}
-      <View className='items-center py-8'>
-        <View className='relative'>
-          <Image source={{ uri: avatarUri ?? DEFAULT_AVATAR }} className='w-28 h-28 rounded-full' />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPage }}>
+
+      {/* Avatar + Info */}
+      <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+        <View style={{ position: 'relative' }}>
+          <Image
+            source={{ uri: avatarUri ?? DEFAULT_AVATAR }}
+            style={{ width: 104, height: 104, borderRadius: 52,
+              borderWidth: 3, borderColor: isDark ? '#374151' : '#E5E7EB' }}
+          />
           <TouchableOpacity
             onPress={handleChangeAvatar}
-            className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-2"
+            disabled={uploading}
+            style={{ position: 'absolute', bottom: 0, right: 0,
+              backgroundColor: '#2563EB', borderRadius: 999, padding: 7,
+              borderWidth: 2, borderColor: colors.bgPage }}
           >
-            <Ionicons name="camera" size={16} color="white" />
+            <Ionicons name="camera" size={15} color="white" />
           </TouchableOpacity>
         </View>
-        <Text className="text-xl font-bold text-gray-900 mt-4">{user.username}</Text>
-        <Text className='text-gray-500 mt-1'>{user.email}</Text>
-        {
-          user.isAdmin && (
-            <View className='mt-2 bg-blue-100 px-3 py-1 rounded-full'>
-              <Text className='text-blue-600 text-xs font-semibold'>Admin</Text>
-            </View>
-          )
-        }
+        <Text style={{ color: colors.text, fontSize: 20, fontWeight: '700', marginTop: 14 }}>
+          {user.username}
+        </Text>
+        <Text style={{ color: colors.textMuted, marginTop: 4, fontSize: 14 }}>
+          {user.email}
+        </Text>
+        {user.isAdmin && (
+          <View style={{ marginTop: 8, backgroundColor: isDark ? '#1E3A5F' : '#DBEAFE',
+            paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 }}>
+            <Text style={{ color: isDark ? '#60A5FA' : '#2563EB', fontSize: 12, fontWeight: '600' }}>
+              Admin
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Menu */}
-      <View className="px-5 gap-3">
-        <MenuItem
-          icon="heart-outline"
-          label="Saved Properties"
-          onPress={() => router.push("/(root)/(tabs)/saved")}
-        />
-
-        <MenuItem
-          icon="notifications-outline"
-          label="Notifications"
-          onPress={() => Alert.alert("Coming Soon", "Notifications coming soon!")}
-        />
-
-        <MenuItem
-          icon="settings-outline"
-          label="Settings"
-          onPress={() => Alert.alert("Coming Soon", "Setting coming soon!")}
-        />
-
-        <MenuItem
-          icon="help-circle-outline"
-          label="Help & Support"
-          onPress={() =>
-            Linking.openURL("mailto:piyushagarwalvo@gmail.com?subject=Help%20%26%20Support%20-%20Kribb%20App")
-          }
-        />
-      </View>
-      <View className="px-5 mt-auto mb-8">
-        <TouchableOpacity
-          onPress={handleSignOut}
-          className="flex-row items-center justify-center bg-gray-50 px-4 py-4 rounded-2xl"
-        >
-          <Ionicons name="log-out-outline" size={22} color="#6B7280" />
-          <Text className='text-red-500 font-semibold ml-2'>Sign Out</Text>
-        </TouchableOpacity>
+      <View style={{ paddingHorizontal: 20, gap: 10 }}>
+        {[
+          { icon: 'heart-outline',         label: 'Saved Properties', onPress: () => router.push('/(root)/(tabs)/saved') },
+          { icon: 'notifications-outline', label: 'Notifications',    onPress: () => Alert.alert('Coming Soon') },
+          { icon: 'settings-outline',      label: 'Settings',         onPress: () => router.push('/(root)/profile/settings') },
+          { icon: 'help-circle-outline',   label: 'Help & Support',   onPress: () => Linking.openURL('mailto:support@example.com') },
+        ].map((item) => (
+          <TouchableOpacity
+            key={item.label}
+            onPress={item.onPress}
+            style={{ flexDirection: 'row', alignItems: 'center',
+              backgroundColor: colors.bgCard, paddingHorizontal: 16,
+              paddingVertical: 14, borderRadius: 16,
+              borderWidth: 1, borderColor: colors.border }}
+          >
+            <View style={{ width: 36, height: 36, borderRadius: 12,
+              backgroundColor: colors.iconBg, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+              <Ionicons name={item.icon as any} size={20} color={colors.iconColor} />
+            </View>
+            <Text style={{ flex: 1, fontSize: 15, fontWeight: '500', color: colors.text }}>
+              {item.label}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        ))}
       </View>
     </SafeAreaView>
   );
 };
 
-const MenuItem = ({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) => {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      className="flex-row items-center bg-gray-50 px-4 py-4 rounded-2xl"
-    >
-      <Ionicons name={icon} size={22} color="#6B7280" />
-      <Text className="flex-1 ml-4 text-base font-medium text-gray-700">{label}</Text>
-      <Ionicons name="chevron-forward" size={22} color="#6B7280" />
-    </TouchableOpacity>
-  )
-
-}
-
-export default Profile
+export default Profile;

@@ -1,4 +1,5 @@
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { useEffect } from "react";
 import "../global.css";
@@ -25,7 +26,9 @@ function RootGuard() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootGuard />
+      <ThemeProvider>
+        <RootGuard />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

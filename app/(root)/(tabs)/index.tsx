@@ -1,26 +1,27 @@
 import FeaturedCard from "@/components/FeaturedCard";
 import PropertyCard from "@/components/PropertyCard";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Property } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL;
 
 export default function HomeScreen() {
     const { signOut, accessToken } = useAuth();
+    const { colors, isDark } = useTheme();
     const router = useRouter();
     const [featured, setFeatured] = useState<Property[]>([]);
     const [recommended, setRecommended] = useState<Property[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
-        if(!accessToken) return;
-        try{
+        if (!accessToken) return;
+        try {
             const headers = {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${accessToken}`,
@@ -28,21 +29,26 @@ export default function HomeScreen() {
             const [featuredRes, recommendedRes] = await Promise.all([
                 fetch(`${API_BASE}/Property/featured`, { headers }),
                 fetch(`${API_BASE}/Property/recommended`, { headers }),
-            ])
-            if(featuredRes.ok) setFeatured(await featuredRes.json());
-            if(recommendedRes.ok) setRecommended(await recommendedRes.json());            
-        }catch(e){
-            console.error('Failed to fetch properties', e); 
-        }finally{
+            ]);
+            if (featuredRes.ok) setFeatured(await featuredRes.json());
+            if (recommendedRes.ok) setRecommended(await recommendedRes.json());
+        } catch (e) {
+            console.error('Failed to fetch properties', e);
+        } finally {
             setLoading(false);
         }
-    }
-    useEffect(() => {
-        fetchData();
-    }, [accessToken]);
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchData();
+        }, [accessToken])
+    )
+
+
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPage }}>
             <FlatList
                 data={recommended}
                 keyExtractor={(item) => item.id}
@@ -50,79 +56,94 @@ export default function HomeScreen() {
                 showsVerticalScrollIndicator={false}
                 ListHeaderComponent={
                     <>
-                        <View className="flex-row items-center justify-between px-5 pt-4 pb-5">
+                        {/* Header */}
+                        <View style={{
+                            flexDirection: 'row', alignItems: 'center',
+                            justifyContent: 'space-between', paddingHorizontal: 20,
+                            paddingTop: 16, paddingBottom: 20
+                        }}>
                             <View>
-                                <Text className="text-gray-900 text-xs">Welcome back 👋</Text>
+                                <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+                                    Welcome back 👋
+                                </Text>
                             </View>
                             <TouchableOpacity onPress={signOut}>
-                                <Ionicons
-                                    name="log-out-outline"
-                                    size={24}
-                                    color="#2563EB"
-                                />
+                                <Ionicons name="log-out-outline" size={24} color={colors.iconColor} />
                             </TouchableOpacity>
                         </View>
+
                         {/* Search */}
                         <TouchableOpacity
                             onPress={() => router.push("/(root)/(tabs)/search")}
-                            className="mx-5 mb-6 flex-row items-center bg-white rounded-2xl px-4 py-3 gap-3"
                             style={{
-                                shadowColor: "#000",
-                                shadowOffset: { width: 0, height: 1 },
-                                shadowOpacity: 0.08,
-                                shadowRadius: 6,
-                                elevation: 2,
+                                marginHorizontal: 20, marginBottom: 24,
+                                flexDirection: 'row', alignItems: 'center',
+                                backgroundColor: colors.bgCard,
+                                borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12,
+                                borderWidth: 1, borderColor: colors.border,
+                                shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: isDark ? 0 : 0.06, shadowRadius: 6, elevation: isDark ? 0 : 2,
                             }}
                         >
-                            <Ionicons name="search-outline" size={18} color="#9CA3AF"/>
-                            <Text className="ml-3 flex-1 text-gray-400">Search properties...</Text>
-                            <View className="bg-blue-600 w-8 h-8 rounded-xl items-center justify-center">
+                            <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+                            <Text style={{ marginLeft: 10, flex: 1, color: colors.textMuted, fontSize: 14 }}>
+                                Search properties...
+                            </Text>
                             <TouchableOpacity
-                                onPress = {() => router.push("/(root)/(tabs)/search?openFilters=true")}
+                                onPress={() => router.push("/(root)/(tabs)/search?openFilters=true")}
+                                style={{
+                                    backgroundColor: '#2563EB', width: 32, height: 32,
+                                    borderRadius: 10, alignItems: 'center', justifyContent: 'center'
+                                }}
                             >
                                 <Ionicons name="options-outline" size={15} color="white" />
                             </TouchableOpacity>
-                            </View>
                         </TouchableOpacity>
 
-                        {/* Featured Section */}
-                        <View className="mb-6">
-                            <Text className="text-gray-900 text-lg font-bold px-5 mb-4">
+                        {/* Featured */}
+                        <View style={{ marginBottom: 24 }}>
+                            <Text style={{
+                                color: colors.text, fontSize: 18, fontWeight: '700',
+                                paddingHorizontal: 20, marginBottom: 16
+                            }}>
                                 Featured
                             </Text>
                             {loading ? (
-                                <ActivityIndicator size="large" color="#2563EB" className="mb-4" />
+                                <ActivityIndicator size="large" color="#2563EB" style={{ marginBottom: 16 }} />
                             ) : (
-                                <FlatList 
+                                <FlatList
                                     data={featured}
                                     keyExtractor={(item) => item.id}
                                     renderItem={({ item }) => <FeaturedCard property={item} />}
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={{ paddingHorizontal: 20 }} 
+                                    contentContainerStyle={{ paddingHorizontal: 20 }}
                                 />
                             )}
                         </View>
 
                         {/* Recommended Header */}
-                        <Text className="text-gray-900 text-lg font-bold px-5 mb-4">
+                        <Text style={{
+                            color: colors.text, fontSize: 18, fontWeight: '700',
+                            paddingHorizontal: 20, marginBottom: 16
+                        }}>
                             Recommended
                         </Text>
                     </>
                 }
-                renderItem={({item}) => (
-                    <View className="px-5">
-                       <PropertyCard property={item} />
+                renderItem={({ item }) => (
+                    <View style={{ paddingHorizontal: 20 }}>
+                        <PropertyCard property={item} />
                     </View>
                 )}
                 ListEmptyComponent={
                     !loading ? (
-                        <View className="items-center py-10">
-                            <Text className="text-gray-500">No properties found</Text>
+                        <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                            <Text style={{ color: colors.textMuted }}>No properties found</Text>
                         </View>
                     ) : null
                 }
             />
         </SafeAreaView>
-    )
+    );
 }

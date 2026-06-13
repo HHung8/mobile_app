@@ -1,5 +1,6 @@
 import PropertyCard from '@/components/PropertyCard';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { SavedProperty } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -11,6 +12,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const Saved = () => {
   const {accessToken} = useAuth();
+  const {colors} = useTheme();
   const [saved, setSaved] = useState<SavedProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,7 +50,7 @@ const Saved = () => {
   );
 
   return (
-    <SafeAreaView className='flex-1 bg-gray-50'>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgPage }}>
         {/* Header */}
         <View className="px-5 pt-4 pb-3">
             <Text className='text-2xl font-bold text-gray-900'>Saved</Text>

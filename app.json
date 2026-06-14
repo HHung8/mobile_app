@@ -45,6 +45,13 @@
           }
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow app to access your photos",
+          "cameraPermission": "Allow app to use camera"
+        }
+      ],
       "expo-font",
       "expo-secure-store",
       "expo-web-browser"

@@ -1,6 +1,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -13,16 +14,16 @@ const TYPES = ["Apartment", "House", "Villa", "Studio"];
 const CURRENCIES = ["USD", "VND", "JPY", "EUR"];
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL;
+const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
+const UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
+
 
 const Create = () => {
   const { colors, isDark } = useTheme();
   const {accessToken} = useAuth();
   const [loading, setLoading] = useState(false);
-
   // Form state
-  const [images, setImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1200",
-  ]);
+  const [images, setImages] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -48,6 +49,78 @@ const Create = () => {
     return null;
   };
 
+  const uploadToCloudinary = async(uri:string): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", {
+      uri,
+      type: "image/jpeg",
+      name: `photo_${Date.now()}.jpg`,
+    } as any);
+    formData.append("upload_preset", UPLOAD_PRESET);
+    const res = await fetch(CLOUDINARY_URL, {
+      method:"POST",
+      body: formData,
+    });
+    if(!res.ok) throw new Error("Cloudinary upload failed");
+    const data = await res.json();
+    return data.secure_url as string;
+  }
+
+  const handlePickImage = async () => {
+  // Xin quyền
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Permission denied", "Please allow photo access in Settings");
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsMultipleSelection: true,   // iOS 14+ / Android
+    quality: 0.8,
+    selectionLimit: 10,
+  });
+
+  if (result.canceled) return;
+
+  setLoading(true);
+  try {
+    const uploaded = await Promise.all(
+      result.assets.map((asset) => uploadToCloudinary(asset.uri))
+    );
+    setImages((prev) => [...prev, ...uploaded]);
+  } catch (e: any) {
+    Alert.alert("Upload failed", e.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleTakePhoto = async () => {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  if (status !== "granted") {
+    Alert.alert("Permission denied", "Please allow camera access in Settings");
+    return;
+  }
+
+  const result = await ImagePicker.launchCameraAsync({
+    quality: 0.8,
+  });
+
+  if (result.canceled) return;
+
+  setLoading(true);
+  try {
+    const url = await uploadToCloudinary(result.assets[0].uri);
+    setImages((prev) => [...prev, url]);
+  } catch (e: any) {
+    Alert.alert("Upload failed", e.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     const error = validate();
@@ -59,7 +132,7 @@ const Create = () => {
         title:       title.trim(),
         description: description.trim(),
         price:       Number(price),
-        type,           // API field "type" = currency string
+        type,   
         bedrooms,
         bathrooms,
         areaSqft:    Number(area) || 0,
@@ -186,7 +259,13 @@ const Create = () => {
                 </View>
               ))}
               <TouchableOpacity
-                onPress={() => Alert.alert("Demo", "Image Picker sẽ làm sau")}
+                onPress={() => 
+                  Alert.alert("Add Photo", "Choose source", [
+                      { text: "Camera",        onPress: handleTakePhoto },
+                      { text: "Photo Library", onPress: handlePickImage },
+                      { text: "Cancel", style: "cancel" },
+                  ])
+                }
                 style={{
                   width: 96, height: 96, borderRadius: 16,
                   backgroundColor: colors.bgCard, borderWidth: 2,

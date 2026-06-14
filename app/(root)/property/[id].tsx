@@ -7,10 +7,10 @@ import { Property } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Dimensions, FlatList, Image, Linking, NativeScrollEvent, NativeSyntheticEvent, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Image, Linking, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ImageViewing from "react-native-image-viewing";
+import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { WebView } from "react-native-webview";
 
 const { width } = Dimensions.get('window');
 const API_ENDPOINT = process.env.EXPO_PUBLIC_API_URL;
@@ -228,35 +228,59 @@ const PropertyDetail = () => {
               <Text className='text-gray-500 text-sm flex-1'>{property.address},{property.city}</Text>
           </View>
         </View>
-        <TouchableOpacity
-          onPress={() => 
+      <TouchableOpacity
+          onPress={() =>
             router.push({
-              pathname:"/(root)/property/map",
+              pathname: "/(root)/property/map",
               params: {
+                latitude: property.latitude,
+                longitude: property.longitude,
+                title: property.title,
+                address: `${property.address}, ${property.city}`,
+              },
+            })
+          }
+          activeOpacity={0.9}
+          style={{ borderRadius: 16, overflow: "hidden", height: 200, marginBottom: 24 }}
+        >
+              {/* Overlay để block touch vào map, chỉ nhận touch của TouchableOpacity */}
+              <View style={{ ...StyleSheet.absoluteFillObject, zIndex: 10 }} />
+
+              <MapView
+                style={{ flex: 1 }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                pitchEnabled={false}
+                rotateEnabled={false}
+                initialRegion={{
                   latitude: property.latitude,
                   longitude: property.longitude,
-                  title: property.title,
-                  address: `${property.address}, ${property.city}`,
-              },
-          })
-        }
-          activeOpacity={0.9}
-          className="rounded-2xl overflow-hidden mb-6"
-          style={{ height: 200 }}
-        >
-          <WebView
-            source={{ uri: mapUrl }}
-            style={{ flex: 1 }}
-            scrollEnabled={false}
-            pointerEvents="none"
-          />  
-          <View className='absolute bottom-3 right-3 bg-white/90 px-3 py-1 rounded-full flex-row items-center gap-1'>
-              <Ionicons name="expand-outline" size={12} color="#374151"/>
-              <Text className='text-gray-600 text-xs font-medium'>
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: property.latitude,
+                    longitude: property.longitude,
+                  }}
+                  title={property.title}
+                />
+              </MapView>
+
+              <View style={{
+                position: "absolute", bottom: 12, right: 12,
+                backgroundColor: "rgba(255,255,255,0.9)",
+                paddingHorizontal: 12, paddingVertical: 4,
+                borderRadius: 999, flexDirection: "row",
+                alignItems: "center", gap: 4, zIndex: 20,
+              }}>
+                <Ionicons name="expand-outline" size={12} color="#374151" />
+                <Text style={{ color: "#4B5563", fontSize: 12, fontWeight: "500" }}>
                   Tap to expand
-              </Text>
-          </View>
-        </TouchableOpacity>
+                </Text>
+              </View>
+            </TouchableOpacity>
         {/* Contact button */}
         <TouchableOpacity
           onPress={handlerContact}
